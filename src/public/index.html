@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API de tareas</title>
+<style>
+  :root { --azul:#0369a1; --oscuro:#0f172a; --gris:#f1f5f9; --rojo:#b91c1c; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,Segoe UI,Arial,sans-serif; margin:0; background:var(--gris); color:var(--oscuro); }
+  header { background:var(--oscuro); color:#fff; padding:18px 24px; }
+  header h1 { margin:0; font-size:1.3rem; } header small { color:#94a3b8; }
+  main { max-width:820px; margin:24px auto; padding:0 16px; }
+  .tarjeta { background:#fff; border-radius:10px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.1); margin-bottom:20px; }
+  input, textarea, select { width:100%; padding:9px; border:1px solid #cbd5e1; border-radius:6px; font:inherit; margin-top:6px; }
+  button { background:var(--azul); color:#fff; border:0; padding:8px 14px; border-radius:6px; cursor:pointer; font:inherit; font-size:.9rem; }
+  button.peligro { background:var(--rojo); }
+  .tarea { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid #e2e8f0; }
+  .tarea small { color:#64748b; } .acciones { display:flex; gap:6px; align-items:center; }
+  .acciones select { width:auto; margin:0; } code { background:var(--gris); padding:2px 6px; border-radius:4px; }
+  #estado { font-size:.85rem; color:#64748b; }
+</style>
+</head>
+<body>
+<header>
+  <h1>API REST de tareas</h1>
+  <small>App 2 · Node.js + Express + PostgreSQL administrado · Desplegada en Render</small>
+</header>
+<main>
+  <div class="tarjeta">
+    <h2>Nueva tarea</h2>
+    <form id="formulario">
+      <input id="titulo" placeholder="Título" maxlength="150" required>
+      <textarea id="descripcion" placeholder="Descripción (opcional)" rows="2"></textarea>
+      <p><button type="submit">Crear tarea</button></p>
+    </form>
+  </div>
+  <div class="tarjeta">
+    <h2>Tareas <span id="contador"></span></h2>
+    <div id="lista"></div>
+    <p id="estado"></p>
+  </div>
+  <div class="tarjeta">
+    <h2>Endpoints</h2>
+    <p><code>GET /api/tareas</code> · <code>POST /api/tareas</code> · <code>PUT /api/tareas/:id</code> · <code>DELETE /api/tareas/:id</code> · <code>GET /health</code></p>
+  </div>
+</main>
+<script>
+const lista = document.getElementById('lista');
+const ESTADOS = { pendiente:'Pendiente', en_progreso:'En progreso', completada:'Completada' };
+
+async function api(url, opciones) {
+  const r = await fetch(url, { headers:{ 'Content-Type':'application/json' }, ...opciones });
+  if (!r.ok && r.status !== 204) throw new Error((await r.json()).error || ('Error ' + r.status));
+  return r.status === 204 ? null : r.json();
+}
+
+async function cargar() {
+  try {
+    const tareas = await api('/api/tareas');
+    document.getElementById('contador').textContent = '(' + tareas.length + ')';
+    lista.textContent = '';
+    if (!tareas.length) lista.textContent = 'Aún no hay tareas.';
+    for (const t of tareas) {
+      const fila = document.createElement('div'); fila.className = 'tarea';
+      const info = document.createElement('div');
+      const titulo = document.createElement('strong'); titulo.textContent = '#' + t.id + ' ' + t.titulo;
+      const desc = document.createElement('div'); const peq = document.createElement('small'); peq.textContent = t.descripcion || ''; desc.appendChild(peq);
+      info.append(titulo, desc);
+      const acc = document.createElement('div'); acc.className = 'acciones';
+      const sel = document.createElement('select');
+      for (const [valor, texto] of Object.entries(ESTADOS)) {
+        const o = document.createElement('option'); o.value = valor; o.textContent = texto; o.selected = valor === t.estado; sel.appendChild(o);
+      }
+      sel.onchange = async () => { await api('/api/tareas/' + t.id, { method:'PUT', body: JSON.stringify({ estado: sel.value }) }); cargar(); };
+      const del = document.createElement('button'); del.className = 'peligro'; del.textContent = 'Eliminar';
+      del.onclick = async () => { if (confirm('¿Eliminar esta tarea?')) { await api('/api/tareas/' + t.id, { method:'DELETE' }); cargar(); } };
+      acc.append(sel, del); fila.append(info, acc); lista.appendChild(fila);
+    }
+    document.getElementById('estado').textContent = '';
+  } catch (e) { document.getElementById('estado').textContent = 'No se pudo cargar: ' + e.message; }
+}
+
+document.getElementById('formulario').onsubmit = async (ev) => {
+  ev.preventDefault();
+  try {
+    await api('/api/tareas', { method:'POST', body: JSON.stringify({ titulo: document.getElementById('titulo').value, descripcion: document.getElementById('descripcion').value }) });
+    ev.target.reset(); cargar();
+  } catch (e) { document.getElementById('estado').textContent = e.message; }
+};
+cargar();
+</script>
+</body>
+</html>
