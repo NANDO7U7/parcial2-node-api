@@ -1,0 +1,16 @@
+{
+  "name": "api-tareas-paas",
+  "version": "1.0.0",
+  "description": "API REST de tareas con Node.js/Express y PostgreSQL administrado - Parcial 2, Informática en la Nube",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
