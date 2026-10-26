@@ -11,7 +11,7 @@ const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const connectionString = process.env.DATABASE_URL;
 const usarSSL = process.env.PGSSL === 'true' || /\.render\.com/.test(connectionString || '');
