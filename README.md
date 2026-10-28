@@ -24,3 +24,5 @@ La tabla `tareas` se crea automáticamente en el primer arranque.
 ## Comandos en Render
 - Build: `npm install`
 - Start: `npm start`
+
+Actualizacion automatica Git-Ops
